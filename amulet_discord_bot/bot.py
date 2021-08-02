@@ -10,7 +10,7 @@ from amulet_discord_bot.const import Chats, HelpMessages, QuestionMessages
 github_match = re.compile(r"https?://(www.)?github.com/.*/.*")
 
 with gzip.open(os.path.join(os.path.dirname(__file__), "prof"), "rb") as f:
-    prof_match = re.compile(f.read().decode("utf-8"))
+    prof_match = re.compile(f.read().decode("utf-8"), flags=re.IGNORECASE|re.MULTILINE)
 
 
 class AmuletBot(discord.Client):
@@ -71,7 +71,7 @@ class AmuletBot(discord.Client):
                     )
                     return
 
-        if prof_match.search(message.content.lower()) is not None:
+        if prof_match.search(message.content) is not None:
             await self._remove_and_dm(
                 message,
                 "Hello. We believe your message contains profanity so it was automatically removed.\n"
