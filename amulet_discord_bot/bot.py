@@ -43,6 +43,8 @@ class AmuletBot(discord.Client):
         await message.delete()
 
     async def on_message(self, message):
+        if message.author.id == self.user.id:
+            return
         if message.channel.id == Chats.AmuletPlugins:
             if github_match.search(message.content) is None:
                 await self._remove_and_dm(
