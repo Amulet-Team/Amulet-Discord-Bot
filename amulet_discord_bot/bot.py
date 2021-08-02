@@ -16,23 +16,32 @@ class AmuletBot(discord.Client):
     async def on_ready(self):
         await self._log("I am back")
 
+    async def _remove_and_dm(self, message, dm_str):
+        fmt_msg = message.content.replace("```", r"`\``")
+        if fmt_msg == message.content:
+            extra_msg = ""
+        else:
+            extra_msg = " You will need to fix the triple backticks."
+        try:
+            await message.author.send(
+                f"{dm_str}\n"
+                f"If you think this was done in error please contact a moderator.\n\n"
+                f"The message you sent is as follows.{extra_msg}\n"
+                f"```\n{fmt_msg}\n```"
+            )
+        except:
+            pass
+        await message.delete()
+
     async def on_message(self, message):
         if message.channel.id == Chats.AmuletPlugins:
             if github_match.search(message.content) is None:
-                fmt_msg = message.content.replace("```", r"`\``")
-                if fmt_msg == message.content:
-                    extra_msg = ""
-                else:
-                    extra_msg = " You will need to fix the triple backticks."
-                await message.author.send(
-                    f"Hello. You just sent a message to the amulet-plugins chat.\n"
-                    f"This chat is reserved for users to show off plugins they have created.\n"
-                    f"Messages must include a link to the plugin on github.\n"
-                    f"If you think this was done in error please contact a moderator.\n\n"
-                    f"The message you sent is as follows.{extra_msg}\n"
-                    f"```\n{fmt_msg}\n```"
+                await self._remove_and_dm(
+                    message,
+                    "Hello. You just sent a message to the amulet-plugins chat.\n"
+                    "This chat is reserved for users to show off plugins they have created.\n"
+                    "Messages must include a link to the plugin on github.\n",
                 )
-                await message.delete()
                 return
         elif message.channel.id == Chats.AmuletGeneral and len(message.content) < 30:
             for msg in HelpMessages:
