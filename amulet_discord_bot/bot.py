@@ -22,6 +22,10 @@ class AmuletBot(discord.Client):
             extra_msg = ""
         else:
             extra_msg = " You will need to fix the triple backticks."
+        await self._log(
+            f"Messaged removed from {message.author.name} in {message.channel.name}\n"
+            f"```\n{fmt_msg}\n```"
+        )
         try:
             await message.author.send(
                 f"{dm_str}\n"
