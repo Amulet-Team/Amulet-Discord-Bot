@@ -101,6 +101,9 @@ class AmuletBot(discord.Client):
                         "Write your question and someone will respond when they are available."
                     )
                     return
+        elif channel_id == Chats.ServerLog and message_text == "!ping":
+            await self._log("Pong!")
+            return
 
         if prof_match.search(message_text) is not None:
             await self._remove_and_dm(
