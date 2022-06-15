@@ -9,8 +9,8 @@ import discord
 
 from .const import Servers, Chats, HelpMessages, QuestionMessages
 
-github_match = re.compile(r"https?://(www.)?github.com/.*/.*")
-url_match = re.compile(
+GithubURLPattern = re.compile(r"https?://(www.)?github.com/.*/.*")
+URLPattern = re.compile(
     r"https?://(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)"
 )
 
@@ -67,12 +67,12 @@ class AmuletBot(discord.Client):
     @staticmethod
     def has_link(msg: str) -> bool:
         """Returns true if the message contains what looks like a link."""
-        return url_match.search(msg) is not None
+        return URLPattern.search(msg) is not None
 
     @staticmethod
     def has_github_link(msg: str) -> bool:
         """Returns true if the message contains a github link."""
-        return github_match.search(msg) is not None
+        return GithubURLPattern.search(msg) is not None
 
     async def _process_message(self, message: discord.Message):
         author = message.author
