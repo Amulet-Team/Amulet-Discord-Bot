@@ -190,12 +190,17 @@ class AmuletBot(discord.Client):
             await self._process_message(message)
         except Exception:
             await self._log(traceback.format_exc())
+            traceback.print_exc()
 
-    async def on_message_edit(self, _, message: discord.Message):
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
         try:
+            server: discord.Guild = self.get_guild(Servers.AmuletServer)
+            channel = server.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
             await self._process_message(message)
         except Exception:
             await self._log(traceback.format_exc())
+            traceback.print_exc()
 
 
 def main():
