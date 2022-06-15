@@ -49,17 +49,18 @@ class AmuletBot(discord.Client):
             extra_msg = ""
         else:
             extra_msg = " You will need to fix the triple backticks."
-        await self._log(
-            f"Messaged removed from {message.author.name} in {message.channel.name}\n"
+        dm_message = (
+            f"{dm_str}\n"
+            f"If you think this was done in error please contact a moderator.\n\n"
+            f"The message you sent is as follows.{extra_msg}\n"
             f"```\n{fmt_msg}\n```"
         )
+        await self._log(
+            f"Message removed from {message.author.name} in {message.channel.name}. The warning sent to the user is as follows.\n"
+            f"{dm_message}"
+        )
         try:
-            await message.author.send(
-                f"{dm_str}\n"
-                f"If you think this was done in error please contact a moderator.\n\n"
-                f"The message you sent is as follows.{extra_msg}\n"
-                f"```\n{fmt_msg}\n```"
-            )
+            await message.author.send(dm_message)
         except:
             pass
         await message.delete()
