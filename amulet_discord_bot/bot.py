@@ -160,6 +160,12 @@ class AmuletBot(discord.Client):
         except Exception:
             await self._log(traceback.format_exc())
 
+    async def on_message_edit(self, _, message: discord.Message):
+        try:
+            await self._process_message(message)
+        except Exception:
+            await self._log(traceback.format_exc())
+
 
 def main():
     parser = argparse.ArgumentParser(description="Run the Amulet Discord bot.")
