@@ -26,7 +26,10 @@ class AmuletBot(discord.Client):
         await chat.send(msg)
 
     async def on_ready(self):
-        await self._log("I am back")
+        try:
+            await self._log(f"I am {os.getlogin()} and I am back")
+        except:
+            await self._log("I am back")
 
     async def ban(self, member: discord.Member, reason: str = None):
         """Ban a user from the server"""
