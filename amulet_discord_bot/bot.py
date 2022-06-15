@@ -7,12 +7,13 @@ from difflib import SequenceMatcher
 
 import discord
 
-from .const import Servers, Chats, HelpMessages, QuestionMessages
+from .const import Servers, Chats, HelpMessages, QuestionMessages, SURoles, Roles
 
 GithubURLPattern = re.compile(r"https?://(www.)?github.com/.*/.*")
 URLPattern = re.compile(
     r"https?://(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)"
 )
+UserPattern = re.compile("<@(?P<user_id>[0-9]+)>")
 
 with gzip.open(os.path.join(os.path.dirname(__file__), "prof"), "rb") as f:
     prof_match = re.compile(
@@ -75,8 +76,16 @@ class AmuletBot(discord.Client):
         """Returns true if the message contains a github link."""
         return GithubURLPattern.search(msg) is not None
 
+    def _is_super_user(self, author: discord.Member) -> bool:
+        guild: discord.Guild = self.get_guild(Servers.AmuletServer)
+        super_user_roles = [guild.get_role(role_id) for role_id in SURoles]
+        for role in super_user_roles:
+            if role in author.roles:
+                return True
+        return False
+
     async def _process_message(self, message: discord.Message):
-        author = message.author
+        author: discord.Member = message.author
         author_id = author.id
         if author_id == self.user.id:
             return
@@ -91,6 +100,27 @@ class AmuletBot(discord.Client):
                 "Please remove the profanity before sending it again.",
             )
             return
+
+        if not self._is_super_user(author):
+            # if sender is not a super user
+            guild = None
+            do_not_at_me_role = None
+            for user_id in map(lambda m: int(m.group("user_id")), UserPattern.finditer(message_text)):
+                if user_id == author_id:
+                    continue
+                # the user mentioned a user
+                if do_not_at_me_role is None:
+                    guild = self.get_guild(Servers.AmuletServer)
+                    do_not_at_me_role: discord.Role = guild.get_role(Roles.DoNotAtMe)
+                if do_not_at_me_role is None:
+                    # could not find the role
+                    break
+                user = guild.get_member(user_id)
+                if user is None:
+                    continue
+                if do_not_at_me_role in user.roles:
+                    await self._remove_and_dm(message, "Please do not tag users. If you have a question please read the FAQ and search the discord to see if your question has already been asked.")
+                    return
 
         if channel_id == Chats.AmuletPlugins:
             # enforce links in the plugin chat having a github link
@@ -173,5 +203,7 @@ def main():
     parser.add_argument("bot_token", type=str)
     args = parser.parse_args()
 
-    client = AmuletBot()
+    intents = discord.Intents.default()
+    intents.members = True
+    client = AmuletBot(intents=intents)
     client.run(args.bot_token)
