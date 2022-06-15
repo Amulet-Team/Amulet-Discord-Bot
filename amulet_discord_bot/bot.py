@@ -105,7 +105,9 @@ class AmuletBot(discord.Client):
             # if sender is not a super user
             guild = None
             do_not_at_me_role = None
-            for user_id in map(lambda m: int(m.group("user_id")), UserPattern.finditer(message_text)):
+            for user_id in map(
+                lambda m: int(m.group("user_id")), UserPattern.finditer(message_text)
+            ):
                 if user_id == author_id:
                     continue
                 # the user mentioned a user
@@ -119,7 +121,10 @@ class AmuletBot(discord.Client):
                 if user is None:
                     continue
                 if do_not_at_me_role in user.roles:
-                    await self._remove_and_dm(message, "Please do not tag users. If you have a question please read the FAQ and search the discord to see if your question has already been asked.")
+                    await self._remove_and_dm(
+                        message,
+                        "Please do not tag users. If you have a question please read the FAQ and search the discord to see if your question has already been asked.",
+                    )
                     return
 
         if channel_id == Chats.AmuletPlugins:
