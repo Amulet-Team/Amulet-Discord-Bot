@@ -80,7 +80,7 @@ class AmuletBot(discord.Client):
         guild: discord.Guild = self.get_guild(Servers.AmuletServer)
         super_user_roles = [guild.get_role(role_id) for role_id in SURoles]
         for role in super_user_roles:
-            if role in author.roles:
+            if hasattr(author, 'roles') and role in author.roles:
                 return True
         return False
 
