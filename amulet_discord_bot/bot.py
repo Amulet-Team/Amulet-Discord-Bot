@@ -35,7 +35,7 @@ class AmuletBot(discord.Client):
 
     async def ban(self, member: discord.Member, reason: str = "Undefined") -> None:
         """Ban a user from the server"""
-        if isinstance(member, discord.Member) and len(member.roles) == 1:
+        if isinstance(member, discord.Member) and not self._is_super_user(member):
             await self._log(f"{member} is banned! reason={reason}")
             reason = (
                 f"{reason}\n"
