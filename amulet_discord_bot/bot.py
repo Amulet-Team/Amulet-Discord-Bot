@@ -81,7 +81,9 @@ class AmuletBot(discord.Client):
         """Returns true if the message contains a github link."""
         return GithubURLPattern.search(msg) is not None
 
-    def _is_super_user(self, author: discord.Member, amulet_server: discord.Guild | None = None) -> bool:
+    def _is_super_user(
+        self, author: discord.Member, amulet_server: discord.Guild | None = None
+    ) -> bool:
         if amulet_server is None:
             amulet_server = self.get_guild(Servers.AmuletServer)
             if amulet_server is None:
