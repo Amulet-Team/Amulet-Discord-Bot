@@ -81,8 +81,11 @@ class AmuletBot(discord.Client):
         """Returns true if the message contains a github link."""
         return GithubURLPattern.search(msg) is not None
 
-    @staticmethod
-    def _is_super_user(amulet_server: discord.Guild, author: discord.Member) -> bool:
+    def _is_super_user(self, author: discord.Member, amulet_server: discord.Guild | None = None) -> bool:
+        if amulet_server is None:
+            amulet_server = self.get_guild(Servers.AmuletServer)
+            if amulet_server is None:
+                return False
         super_user_roles = [amulet_server.get_role(role_id) for role_id in SURoles]
         for role in super_user_roles:
             if role in author.roles:
@@ -116,7 +119,7 @@ class AmuletBot(discord.Client):
             )
             return
 
-        if amulet_server is not None and not self._is_super_user(amulet_server, author):
+        if amulet_server is not None and not self._is_super_user(author, amulet_server):
             # if sender is not a super-user and they @someone with the DoNotAtMe role, remove the message.
             do_not_at_me_role: discord.Role | None = None
 
