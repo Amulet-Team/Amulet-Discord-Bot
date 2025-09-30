@@ -22,17 +22,18 @@ with gzip.open(os.path.join(os.path.dirname(__file__), "prof"), "rb") as f:
 
 
 class AmuletBot(discord.Client):
-    async def _log(self, msg: str):
+    async def _log(self, msg: str) -> None:
         chat = self.get_channel(Chats.ServerLog)
-        await chat.send(msg)
+        if isinstance(chat, discord.abc.Messageable):
+            await chat.send(msg)
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         try:
             await self._log(f"I am {os.getlogin()} and I am back")
         except:
             await self._log("I am back")
 
-    async def ban(self, member: discord.Member, reason: str = None):
+    async def ban(self, member: discord.Member, reason: str = "Undefined") -> None:
         """Ban a user from the server"""
         if isinstance(member, discord.Member) and len(member.roles) == 1:
             await self._log(f"{member} is banned! reason={reason}")
@@ -40,10 +41,11 @@ class AmuletBot(discord.Client):
                 f"{reason}\n"
                 f"If you think this was done in error please contact a moderator.\n\n"
             )
-            server: discord.Guild = self.get_guild(Servers.AmuletServer)
-            await server.ban(member, reason=reason)
+            server = self.get_guild(Servers.AmuletServer)
+            if server is not None:
+                await server.ban(member, reason=reason)
 
-    async def _remove_and_dm(self, message, dm_str):
+    async def _remove_and_dm(self, message: discord.Message, dm_str: str) -> None:
         """Remove a given message and let the user know."""
         fmt_msg = message.content.replace("```", r"`\``")
         if fmt_msg == message.content:
@@ -56,12 +58,15 @@ class AmuletBot(discord.Client):
             f"The message you sent is as follows.{extra_msg}\n"
             f"```\n{fmt_msg}\n```"
         )
+        author = message.author
+        channel = message.channel
+        channel_name = getattr(channel, "name", "Unknown channel")
         await self._log(
-            f"Message removed from {message.author.name} in {message.channel.name}. The warning sent to the user is as follows.\n"
+            f"Message removed from {author.name} in {channel_name}. The warning sent to the user is as follows.\n"
             f"{dm_message}"
         )
         try:
-            await message.author.send(dm_message)
+            await author.send(dm_message)
         except:
             pass
         await message.delete()
@@ -76,18 +81,28 @@ class AmuletBot(discord.Client):
         """Returns true if the message contains a github link."""
         return GithubURLPattern.search(msg) is not None
 
-    def _is_super_user(self, author: discord.Member) -> bool:
-        guild: discord.Guild = self.get_guild(Servers.AmuletServer)
-        super_user_roles = [guild.get_role(role_id) for role_id in SURoles]
+    @staticmethod
+    def _is_super_user(amulet_server: discord.Guild, author: discord.Member) -> bool:
+        super_user_roles = [amulet_server.get_role(role_id) for role_id in SURoles]
         for role in super_user_roles:
             if role in author.roles:
                 return True
         return False
 
-    async def _process_message(self, message: discord.Message):
-        author: discord.Member = message.author
+    def _get_own_id(self) -> int | None:
+        user = self.user
+        if user is None:
+            return None
+        else:
+            return user.id
+
+    async def _process_message(self, message: discord.Message) -> None:
+        amulet_server = self.get_guild(Servers.AmuletServer)
+        author = message.author
+        if not isinstance(author, discord.Member):
+            return
         author_id = author.id
-        if author_id == self.user.id:
+        if author_id == self._get_own_id():
             return
         channel_id = message.channel.id
         message_text = message.content
@@ -101,23 +116,21 @@ class AmuletBot(discord.Client):
             )
             return
 
-        if not self._is_super_user(author):
-            # if sender is not a super user
-            guild = None
-            do_not_at_me_role = None
-            for user_id in map(
-                lambda m: int(m.group("user_id")), UserPattern.finditer(message_text)
-            ):
+        if amulet_server is not None and not self._is_super_user(amulet_server, author):
+            # if sender is not a super-user and they @someone with the DoNotAtMe role, remove the message.
+            do_not_at_me_role: discord.Role | None = None
+
+            for match in UserPattern.finditer(message_text):
+                user_id = int(match.group("user_id"))
                 if user_id == author_id:
+                    # if they @themselves
                     continue
-                # the user mentioned a user
                 if do_not_at_me_role is None:
-                    guild = self.get_guild(Servers.AmuletServer)
-                    do_not_at_me_role: discord.Role = guild.get_role(Roles.DoNotAtMe)
-                if do_not_at_me_role is None:
-                    # could not find the role
-                    break
-                user = guild.get_member(user_id)
+                    do_not_at_me_role = amulet_server.get_role(Roles.DoNotAtMe)
+                    if do_not_at_me_role is None:
+                        # could not find the role
+                        break
+                user = amulet_server.get_member(user_id)
                 if user is None:
                     continue
                 if do_not_at_me_role in user.roles:
@@ -164,21 +177,24 @@ class AmuletBot(discord.Client):
                 await self._log(f"Pong!")
             return
 
-        if self.has_link(message_text) and not self.has_github_link(message_text):
+        if (
+            amulet_server is not None
+            and self.has_link(message_text)
+            and not self.has_github_link(message_text)
+        ):
             # remove spam messages
-            server: discord.Guild = self.get_guild(Servers.AmuletServer)
             count = 1
-            for channel in server.text_channels:
+            for channel in amulet_server.text_channels:
                 if (
                     channel.id != channel_id
                     and channel.permissions_for(author).read_message_history
                 ):
-                    async for message_ in channel.history(limit=30):
-                        message_: discord.Message
+                    async for other_message in channel.history(limit=30):
+                        other_author = other_message.author
                         if (
-                            message_.author.id == author_id
+                            other_author.id == author_id
                             and SequenceMatcher(
-                                None, message_text, message_.content
+                                None, message_text, other_message.content
                             ).ratio()
                             > 0.9
                         ):
@@ -190,17 +206,21 @@ class AmuletBot(discord.Client):
                 await self.ban(author, f"spamming\n{message_text}")
             return
 
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         try:
             await self._process_message(message)
         except Exception:
             await self._log(traceback.format_exc())
             traceback.print_exc()
 
-    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
         try:
-            server: discord.Guild = self.get_guild(Servers.AmuletServer)
+            server = self.get_guild(Servers.AmuletServer)
+            if server is None:
+                return
             channel = server.get_channel(payload.channel_id)
+            if not isinstance(channel, discord.abc.Messageable):
+                return
             message = await channel.fetch_message(payload.message_id)
             await self._process_message(message)
         except Exception:
@@ -208,7 +228,7 @@ class AmuletBot(discord.Client):
             traceback.print_exc()
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Run the Amulet Discord bot.")
     parser.add_argument("bot_token", type=str)
     args = parser.parse_args()

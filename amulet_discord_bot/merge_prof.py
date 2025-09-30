@@ -2,7 +2,7 @@ import gzip
 import re
 
 
-def main():
+def main() -> None:
     with open("prof_database", encoding="utf-8") as f:
         prof_in = [l.strip().lower() for l in f.readlines() if l.strip()]
     prof = []
