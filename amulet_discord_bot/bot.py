@@ -221,8 +221,12 @@ class AmuletBot(discord.Client):
             channel = server.get_channel(payload.channel_id)
             if not isinstance(channel, discord.abc.Messageable):
                 return
-            message = await channel.fetch_message(payload.message_id)
-            await self._process_message(message)
+            try:
+                message = await channel.fetch_message(payload.message_id)
+            except discord.Forbidden:
+                pass
+            else:
+                await self._process_message(message)
         except Exception:
             await self._log(traceback.format_exc())
             traceback.print_exc()
