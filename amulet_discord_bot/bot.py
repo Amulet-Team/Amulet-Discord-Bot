@@ -244,5 +244,6 @@ def main() -> None:
 
     intents = discord.Intents.default()
     intents.members = True
+    intents.message_content = True
     client = AmuletBot(intents=intents)
     client.run(args.bot_token)
