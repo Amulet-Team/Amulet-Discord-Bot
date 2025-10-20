@@ -69,8 +69,8 @@ class AmuletBot(discord.Client):
         await message.delete()
         try:
             await author.send(dm_message)
-        except:
-            pass
+        except discord.errors.Forbidden:
+            await self._log(f"Unable to send message to {author.name}.")
 
     @staticmethod
     def has_link(msg: str) -> bool:
