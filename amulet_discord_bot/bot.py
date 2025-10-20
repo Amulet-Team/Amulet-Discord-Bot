@@ -29,9 +29,10 @@ class AmuletBot(discord.Client):
 
     async def on_ready(self) -> None:
         try:
-            await self._log(f"I am {os.getlogin()} and I am back")
+            msg = f"I am {os.getlogin()} and I am back"
         except:
-            await self._log("I am back")
+            msg = "I am back"
+        await self._log(msg)
 
     async def ban(self, member: discord.Member, reason: str = "Undefined") -> None:
         """Ban a user from the server"""
@@ -177,9 +178,10 @@ class AmuletBot(discord.Client):
         elif channel_id == Chats.ServerLog and message_text == "!ping":
             # alive check
             try:
-                await self._log(f"Pong! {os.getlogin()}")
+                msg = f"Pong! {os.getlogin()}"
             except:
-                await self._log(f"Pong!")
+                msg = f"Pong!"
+            await self._log(msg)
             return
 
         if (
