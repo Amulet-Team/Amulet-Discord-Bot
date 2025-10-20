@@ -66,11 +66,11 @@ class AmuletBot(discord.Client):
             f"Message removed from {author.name} in {channel_name}. The warning sent to the user is as follows.\n"
             f"{dm_message}"
         )
+        await message.delete()
         try:
             await author.send(dm_message)
         except:
             pass
-        await message.delete()
 
     @staticmethod
     def has_link(msg: str) -> bool:
