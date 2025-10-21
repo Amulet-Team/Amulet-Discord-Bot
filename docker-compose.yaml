@@ -1,5 +1,6 @@
 services:
   amulet-discord-bot:
     image: amulet-discord-bot
+    restart: unless-stopped
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
