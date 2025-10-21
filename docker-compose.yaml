@@ -1,0 +1,5 @@
+services:
+  amulet-discord-bot:
+    image: amulet-discord-bot
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
