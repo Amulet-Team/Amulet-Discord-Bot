@@ -29,9 +29,10 @@ class AmuletBot(discord.Client):
 
     async def on_ready(self) -> None:
         try:
-            await self._log(f"I am {os.getlogin()} and I am back")
+            msg = f"I am {os.getlogin()} and I am back"
         except:
-            await self._log("I am back")
+            msg = "I am back"
+        await self._log(msg)
 
     async def ban(self, member: discord.Member, reason: str = "Undefined") -> None:
         """Ban a user from the server"""
@@ -65,11 +66,11 @@ class AmuletBot(discord.Client):
             f"Message removed from {author.name} in {channel_name}. The warning sent to the user is as follows.\n"
             f"{dm_message}"
         )
+        await message.delete()
         try:
             await author.send(dm_message)
-        except:
-            pass
-        await message.delete()
+        except discord.errors.Forbidden:
+            await self._log(f"Unable to send message to {author.name}.")
 
     @staticmethod
     def has_link(msg: str) -> bool:
@@ -177,9 +178,10 @@ class AmuletBot(discord.Client):
         elif channel_id == Chats.ServerLog and message_text == "!ping":
             # alive check
             try:
-                await self._log(f"Pong! {os.getlogin()}")
+                msg = f"Pong! {os.getlogin()}"
             except:
-                await self._log(f"Pong!")
+                msg = f"Pong!"
+            await self._log(msg)
             return
 
         if (
@@ -244,5 +246,6 @@ def main() -> None:
 
     intents = discord.Intents.default()
     intents.members = True
+    intents.message_content = True
     client = AmuletBot(intents=intents)
     client.run(args.bot_token)
