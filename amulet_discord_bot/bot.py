@@ -241,11 +241,11 @@ class AmuletBot(discord.Client):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the Amulet Discord bot.")
-    parser.add_argument("bot_token", type=str)
+    parser.add_argument("bot_token", type=str, nargs="?")
     args = parser.parse_args()
 
     intents = discord.Intents.default()
     intents.members = True
     intents.message_content = True
     client = AmuletBot(intents=intents)
-    client.run(args.bot_token)
+    client.run(args.bot_token or os.environ["BOT_TOKEN"])
