@@ -4,6 +4,7 @@ import re
 import gzip
 import os
 from difflib import SequenceMatcher
+from datetime import datetime, timedelta, timezone
 
 import discord
 
@@ -184,33 +185,36 @@ class AmuletBot(discord.Client):
             await self._log(msg)
             return
 
-        if (
-            amulet_server is not None
-            and self.has_link(message_text)
-            and not self.has_github_link(message_text)
+        if amulet_server is not None and (
+            self.has_link(message_text) or message.attachments
         ):
-            # remove spam messages
-            count = 1
-            for channel in amulet_server.text_channels:
-                if (
-                    channel.id != channel_id
-                    and channel.permissions_for(author).read_message_history
-                ):
-                    async for other_message in channel.history(limit=30):
-                        other_author = other_message.author
-                        if (
-                            other_author.id == author_id
-                            and SequenceMatcher(
-                                None, message_text, other_message.content
-                            ).ratio()
-                            > 0.9
+
+            async def is_spam() -> bool:
+                count = 1
+                for channel in amulet_server.text_channels:
+                    if (
+                        channel.id != channel_id
+                        and channel.permissions_for(author).read_message_history
+                    ):
+                        async for other_message in channel.history(
+                            limit=30,
+                            after=datetime.now(timezone.utc) - timedelta(minutes=5),
                         ):
-                            count += 1
-                            break
-                if count >= 3:
-                    break
-            if count >= 3:
-                await self.ban(author, f"spamming\n{message_text}")
+                            if other_message.author.id == author_id and (
+                                self.has_link(other_message.content)
+                                or other_message.attachments
+                            ):
+                                count += 1
+                                break
+                        if count >= 3:
+                            return True
+                return False
+
+            if await is_spam():
+                reason = f"spamming\nSTART MESSAGE\n{message_text}\nEND MESSAGE"
+                for attachment in message.attachments:
+                    reason += f"\n{attachment.url}"
+                await self.ban(author, reason)
             return
 
     async def on_message(self, message: discord.Message) -> None:
