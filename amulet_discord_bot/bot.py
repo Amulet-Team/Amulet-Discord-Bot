@@ -5,6 +5,7 @@ import gzip
 import os
 from difflib import SequenceMatcher
 from datetime import datetime, timedelta, timezone
+import asyncio
 
 import discord
 
@@ -46,6 +47,8 @@ class AmuletBot(discord.Client):
             server = self.get_guild(Servers.AmuletServer)
             if server is not None:
                 await server.ban(member, reason=reason)
+                await asyncio.sleep(10)
+                await server.ban(member)
 
     async def _remove_and_dm(self, message: discord.Message, dm_str: str) -> None:
         """Remove a given message and let the user know."""
