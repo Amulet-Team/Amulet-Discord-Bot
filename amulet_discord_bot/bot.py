@@ -5,6 +5,7 @@ import gzip
 import os
 from difflib import SequenceMatcher
 from datetime import datetime, timedelta, timezone
+import asyncio
 
 import discord
 
